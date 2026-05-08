@@ -12,5 +12,6 @@ import configuration from '@/config/env.config';
       envFilePath:['.env'],
       load: [configuration]
     }),AuthModule, UsersModule, PrismaModule],
+  providers: [],
 })
 export class AppModule {}

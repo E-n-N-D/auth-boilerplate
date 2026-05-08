@@ -16,18 +16,19 @@ datasource db {
 model User {
   id            String   @id @default(uuid())
   email         String   @unique
-  passwordHash  String
+  passwordHash  String?
   firstName     String
   lastName      String
-  google_id     String?  @unique
-  otp           Otp[]
-  // Can use this for simplicity
-  // otp           Int
-  // expiresAt     DateTime
+
+  oAuthAccounts OAuthAccounts[]
+  otps          Otp[]
   isVerified    Boolean  @default(false)
   refreshToken  String?  @unique
+
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  @@map("users")
 }
 
 // Can be removed if doing simple verification
@@ -40,4 +41,19 @@ model Otp {
   used      Boolean   @default(false)
 
   createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  @@map("otps")
+}
+
+// model for storing data for OAuth logins for different providers
+model OAuthAccounts {
+  provider_user_id  String  @id
+  provider          String
+  userId            String
+  user              User  @relation(fields: [userId], references: [id])
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("oAuthAccounts")
 }
