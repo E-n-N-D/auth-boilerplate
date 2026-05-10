@@ -23,7 +23,7 @@ model User {
   oAuthAccounts OAuthAccounts[]
   otps          Otp[]
   isVerified    Boolean  @default(false)
-  refreshToken  String?  @unique
+  refreshHashToken  String?  @unique
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

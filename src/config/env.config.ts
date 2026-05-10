@@ -5,7 +5,8 @@ export default () => ({
 
   databaseURL: process.env.DATABASE_URL,
 
-  jwtsecret: process.env.JWT_SECRET,
+  refreshSecret: process.env.REFRESH_SECRET || 'refresh',
+  accessSecret: process.env.ACCESS_SECRET || 'access',
 
   google: {
     clientId: process.env.GOOGLE_CLIENT_ID,
