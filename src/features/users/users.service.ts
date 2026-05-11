@@ -2,7 +2,7 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException,
 
 import { PrismaService } from '@/prisma/prisma.service';
 import { PrismaClientKnownRequestError } from "@/generated/prisma/internal/prismaNamespace";
-import { CreateUserDto } from './dto';
+import { CreateUserDto, GoogleUserDto } from './dto';
 import argon from 'argon2';
 
 
@@ -40,38 +40,27 @@ export class UsersService {
         return user;
     }
 
-    async updateRefreshToken(userId: string, refreshHashToken: string|null){
+    async findOrCreateGoogleUser(googleUser: GoogleUserDto){
+        const user = await this.createUser({email: googleUser.email, firstName: googleUser.firstName, lastName: googleUser.lastName, isVerified:true})
+        if(!user) throw new Error("Account couldn't be created. Try again!")
         try {
-            await this.prismaService.user.update({
-                where: {
-                    id: userId
-                },
-                data: {
-                    refreshHashToken
+            await this.prismaService.oAuthAccounts.create({
+                data:{
+                    provider_user_id: googleUser.provider_user_id,
+                    userId: user.id,
+                    provider: "Google",
                 }
-            });
-
+            })
+            return user;
         } catch (error) {
-            if(error instanceof PrismaClientKnownRequestError) {
-                if (error.code === 'P2025') {
-                    throw new NotFoundException('User not found');
+            await this.prismaService.user.delete({
+                where:{
+                    id: user.id
                 }
-            }
-            throw error;
+            })
+
+            throw new BadRequestException("Couldn\'t create OAuth account. Try another account!")
         }
     }
 
-    async verifyRefreshToken(userId: string, refreshToken: string){
-        const user = await this.prismaService.user.findUnique({
-            where:{
-                id: userId
-            }
-        })
-        if(!user || !user.refreshHashToken) throw new BadRequestException('Invalid refreshToken');
-
-        const isMatching = await argon.verify(user.refreshHashToken, refreshToken);
-
-        if (!isMatching) throw new UnauthorizedException('User not authorized!')
-        return true;
-}
 }

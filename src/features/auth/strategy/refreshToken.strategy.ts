@@ -4,7 +4,7 @@ import { PassportStrategy } from "@nestjs/passport";
 import { Strategy } from "passport-jwt";
 import { JwtPayload } from "../dto";
 import {Request} from 'express';
-import { UsersService } from "@/features/users/users.service";
+import { AuthService } from "../auth.service";
 
 const extractRefreshToken = (req: Request)=>{
     // 1. WEB: cookie-based (HttpOnly)
@@ -28,7 +28,7 @@ const extractRefreshToken = (req: Request)=>{
 @Injectable()
 export class RefreshTokenStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
     constructor(config: ConfigService,
-        private userService: UsersService
+        private authService: AuthService
     ){
         const secret = config.get('refreshSecret');
 
@@ -52,7 +52,7 @@ export class RefreshTokenStrategy extends PassportStrategy(Strategy, 'jwt-refres
             );
         }
 
-        await this.userService.verifyRefreshToken(payload.userId, refreshToken);
+        await this.authService.verifyRefreshToken(payload.userId, refreshToken);
 
         return {userId: payload.userId, email: payload.email}
     }

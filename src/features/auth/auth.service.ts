@@ -1,14 +1,17 @@
-import { BadRequestException, Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
 import { JwtPayload, LoginDto, SignUpDto } from "./dto";
 import * as argon from 'argon2';
 import { UsersService } from "@/features/users/users.service";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
+import { PrismaService } from "@/prisma/prisma.service";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/client";
 
 @Injectable()
 export class AuthService {
     constructor(
         private userService: UsersService,
+        private prismaService: PrismaService,
         private jwtService: JwtService,
         private config: ConfigService,
     ){}
@@ -24,15 +27,12 @@ export class AuthService {
                 email: user.email
             } 
 
-            const accessToken = await this.signAccessToken(payload);
-            const refreshToken = await this.signRefreshToken(payload);
-
-            await this.updateRefreshTokens(user.id, refreshToken);
+            const {accessToken, refreshToken, safeUser} = await this.updateRefreshTokens(payload);
 
             return {
                 success: true,
                 message: "Signed in successfully",
-                user,
+                user: safeUser,
                 accessToken,
                 refreshToken
             }
@@ -51,11 +51,21 @@ export class AuthService {
             email: user.email
         } 
 
-        const accessToken = await this.signAccessToken(payload);
-        const refreshToken = await this.signRefreshToken(payload);
-        await this.updateRefreshTokens(user.id, refreshToken);
+        const {accessToken, refreshToken, safeUser} = await this.updateRefreshTokens(payload);
 
-        const {passwordHash, refreshHashToken, ...safeUser} = user;
+        // const {passwordHash, refreshHashToken, ...safeUser} = user;
+
+        return {
+            success: true,
+            message: "Logged in successfully",
+            user: safeUser,
+            accessToken,
+            refreshToken
+        }
+    }
+
+    async googleLogin(payload: JwtPayload){
+        const {accessToken, refreshToken, safeUser} = await this.updateRefreshTokens(payload);
 
         return {
             success: true,
@@ -83,9 +93,34 @@ export class AuthService {
         });
     }
 
-    async updateRefreshTokens(userId: string, refreshToken: string){
-        const refreshHashToken = await argon.hash(refreshToken)
-        await this.userService.updateRefreshToken(userId, refreshHashToken)
+    async updateRefreshTokens(payload: JwtPayload){
+
+        const accessToken = await this.signAccessToken(payload);
+        const refreshToken = await this.signAccessToken(payload);
+
+        const refreshHash = await argon.hash(refreshToken)
+        try {
+            const user = await this.prismaService.user.update({
+                where: {
+                    id: payload.userId
+                },
+                data: {
+                    refreshHashToken: refreshHash
+                }
+            });
+
+            const {passwordHash, refreshHashToken, ...safeUser} = user
+
+            return {accessToken, refreshToken, safeUser}
+
+        } catch (error) {
+            if(error instanceof PrismaClientKnownRequestError) {
+                if (error.code === 'P2025') {
+                    throw new NotFoundException('User not found');
+                }
+            }
+            throw error;
+        }
     }
 
     async refreshTokens(payload: JwtPayload){
@@ -98,5 +133,19 @@ export class AuthService {
             user: safeUser,
             accessToken
         }
+    }
+
+    async verifyRefreshToken(userId: string, refreshToken: string){
+        const user = await this.prismaService.user.findUnique({
+            where:{
+                id: userId
+            }
+        })
+        if(!user || !user.refreshHashToken) throw new BadRequestException('Invalid refreshToken');
+
+        const isMatching = await argon.verify(user.refreshHashToken, refreshToken);
+
+        if (!isMatching) throw new UnauthorizedException('User not authorized!')
+        return true;
     }
 }
