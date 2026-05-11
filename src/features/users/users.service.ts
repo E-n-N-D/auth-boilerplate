@@ -1,8 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 
 import { PrismaService } from '@/prisma/prisma.service';
 import { PrismaClientKnownRequestError } from "@/generated/prisma/internal/prismaNamespace";
 import { CreateUserDto } from './dto';
+import argon from 'argon2';
 
 
 @Injectable()
@@ -14,7 +15,8 @@ export class UsersService {
             const user = await this.prismaService.user.create({
                 data: dto,
                 omit:{
-                    passwordHash:true
+                    passwordHash:true,
+                    refreshHashToken:true
                 }
             })
             return user;
@@ -58,4 +60,18 @@ export class UsersService {
             throw error;
         }
     }
+
+    async verifyRefreshToken(userId: string, refreshToken: string){
+        const user = await this.prismaService.user.findUnique({
+            where:{
+                id: userId
+            }
+        })
+        if(!user || !user.refreshHashToken) throw new BadRequestException('Invalid refreshToken');
+
+        const isMatching = await argon.verify(user.refreshHashToken, refreshToken);
+
+        if (!isMatching) throw new UnauthorizedException('User not authorized!')
+        return true;
+}
 }

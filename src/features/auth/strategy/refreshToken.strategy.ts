@@ -1,23 +1,59 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { PassportStrategy } from "@nestjs/passport";
-import { ExtractJwt, Strategy } from "passport-jwt";
+import { Strategy } from "passport-jwt";
+import { JwtPayload } from "../dto";
+import {Request} from 'express';
+import { UsersService } from "@/features/users/users.service";
+
+const extractRefreshToken = (req: Request)=>{
+    // 1. WEB: cookie-based (HttpOnly)
+    if (req.cookies?.refreshToken) {
+        return req.cookies.refreshToken;
+    }
+
+    // 2. MOBILE: Authorization header
+    if (req.headers.authorization) {
+        const [type, token] =
+        req.headers.authorization.split(' ');
+
+        if (type === 'Bearer') {
+        return token;
+        }
+    }
+
+    return null;
+}
 
 @Injectable()
-export class RefreshTokenStrategy extends PassportStrategy(Strategy, 'jwt') {
-    constructor(config: ConfigService){
+export class RefreshTokenStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
+    constructor(config: ConfigService,
+        private userService: UsersService
+    ){
         const secret = config.get('refreshSecret');
 
         if (!secret) throw new Error('refreshSecret not defined!')
             
         super({
-            jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+            jwtFromRequest: extractRefreshToken,
             ignoreExpiration: false,
             secretOrKey: secret,
+            passReqToCallback: true
         });
     }
 
-    async validate(payload: any){
-        return {userId: payload.sub, email: payload.email}
+    async validate(req: Request, payload: JwtPayload){
+        const refreshToken =
+        extractRefreshToken(req);
+
+        if (!refreshToken) {
+            throw new UnauthorizedException(
+                'Refresh token missing',
+            );
+        }
+
+        await this.userService.verifyRefreshToken(payload.userId, refreshToken);
+
+        return {userId: payload.userId, email: payload.email}
     }
 }

@@ -1,6 +1,8 @@
-import { Body, Controller, Get, Post } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from "@nestjs/common";
 import { AuthService } from "./auth.service";
-import { LoginDto, SignUpDto } from "./dto";
+import { JwtPayload, LoginDto, SignUpDto } from "./dto";
+import { RefreshTokenGuard } from "./guard";
+import { GetUser } from "./decorator";
 
 @Controller('auth')
 export class AuthController {
@@ -8,7 +10,7 @@ export class AuthController {
 
     @Post('signup')
     async signup(@Body() dto:SignUpDto){
-        this.authService.signUp(dto);
+        return this.authService.signUp(dto);
     }
 
     @Get('google/callback')
@@ -16,11 +18,21 @@ export class AuthController {
 
     }
 
+    @HttpCode(HttpStatus.OK)
     @Post('login')
     async login(@Body() dto:LoginDto){
-        this.authService.login(dto);
+        return this.authService.login(dto);
     }
 
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(RefreshTokenGuard)
+    @Get('refresh')
+    async refreshTokens(@GetUser() payload){
+        console.log(payload)
+        return this.authService.refreshTokens(payload)
+    }
+
+    @HttpCode(HttpStatus.OK)
     @Get('logout')
     async logout(){
 
