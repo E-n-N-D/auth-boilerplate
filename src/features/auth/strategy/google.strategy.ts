@@ -3,6 +3,7 @@ import { BadRequestException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { PassportStrategy } from "@nestjs/passport";
 import { Profile, Strategy, VerifyCallback } from "passport-google-oauth20";
+import { SafeUser } from "../dto";
 
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google'){
     constructor(
@@ -35,7 +36,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google'){
         };
 
         // find or create the user in your DB
-        const user = await this.userService.findOrCreateGoogleUser(googleUser);
+        const user:SafeUser = await this.userService.findOrCreateGoogleUser(googleUser);
 
         done(null, user);
     }

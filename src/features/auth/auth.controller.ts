@@ -1,6 +1,6 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from "@nestjs/common";
 import { AuthService } from "./auth.service";
-import { LoginDto, SignUpDto } from "./dto";
+import { LoginDto, SafeUser, SignUpDto } from "./dto";
 import { GoogleGuard, RefreshTokenGuard } from "./guard";
 import { GetUser } from "./decorator";
 import type  { User } from "@/generated/prisma/client";
@@ -16,7 +16,7 @@ export class AuthController {
 
     @Get('google/callback')
     @UseGuards(GoogleGuard)
-    async googleSignin(@GetUser() user: User){
+    async googleSignin(@GetUser() user: SafeUser){
         return this.authService.googleLogin({email: user.email, userId: user.id})
     }
 
@@ -29,9 +29,8 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     @UseGuards(RefreshTokenGuard)
     @Get('refresh')
-    async refreshTokens(@GetUser() payload){
-        console.log(payload)
-        return this.authService.refreshTokens(payload)
+    async refreshTokens(@GetUser() user: SafeUser){
+        return this.authService.refreshTokens(user)
     }
 
     @HttpCode(HttpStatus.OK)

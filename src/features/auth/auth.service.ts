@@ -1,11 +1,12 @@
 import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
-import { JwtPayload, LoginDto, SignUpDto } from "./dto";
+import { JwtPayload, LoginDto, SafeUser, SignUpDto } from "./dto";
 import * as argon from 'argon2';
 import { UsersService } from "@/features/users/users.service";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
 import { PrismaService } from "@/prisma/prisma.service";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/client";
+import { User } from "@/generated/prisma/client";
 
 @Injectable()
 export class AuthService {
@@ -123,14 +124,16 @@ export class AuthService {
         }
     }
 
-    async refreshTokens(payload: JwtPayload){
-        const user = await this.userService.findByEmail(payload.email)
+    async refreshTokens(user: SafeUser){
+        const payload: JwtPayload = {
+            userId: user.id,
+            email: user.email
+        }
         const accessToken = await this.signAccessToken(payload)
-        const {passwordHash, refreshHashToken, ...safeUser} = user;
         return {
             success: true,
             message: "Token refreshed successfully",
-            user: safeUser,
+            user,
             accessToken
         }
     }
@@ -144,8 +147,9 @@ export class AuthService {
         if(!user || !user.refreshHashToken) throw new BadRequestException('Invalid refreshToken');
 
         const isMatching = await argon.verify(user.refreshHashToken, refreshToken);
+        const safeUser = user as SafeUser
 
         if (!isMatching) throw new UnauthorizedException('User not authorized!')
-        return true;
+        return safeUser;
     }
 }

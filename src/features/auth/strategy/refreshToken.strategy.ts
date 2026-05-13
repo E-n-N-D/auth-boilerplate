@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { PassportStrategy } from "@nestjs/passport";
 import { Strategy } from "passport-jwt";
-import { JwtPayload } from "../dto";
+import { JwtPayload, SafeUser } from "../dto";
 import {Request} from 'express';
 import { AuthService } from "../auth.service";
 
@@ -42,7 +42,7 @@ export class RefreshTokenStrategy extends PassportStrategy(Strategy, 'jwt-refres
         });
     }
 
-    async validate(req: Request, payload: JwtPayload){
+    async validate(req: Request, payload: JwtPayload): Promise<SafeUser> {
         const refreshToken =
         extractRefreshToken(req);
 
@@ -52,8 +52,8 @@ export class RefreshTokenStrategy extends PassportStrategy(Strategy, 'jwt-refres
             );
         }
 
-        await this.authService.verifyRefreshToken(payload.userId, refreshToken);
+        const user = await this.authService.verifyRefreshToken(payload.userId, refreshToken);
 
-        return {userId: payload.userId, email: payload.email}
+        return user;
     }
 }

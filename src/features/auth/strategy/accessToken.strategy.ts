@@ -2,11 +2,16 @@ import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { PassportStrategy } from "@nestjs/passport";
 import { ExtractJwt, Strategy } from "passport-jwt";
-import { JwtPayload } from "../dto";
+import { JwtPayload, SafeUser } from "../dto";
+import { UsersService } from "@/features/users/users.service";
+import { User } from "@/generated/prisma/client";
 
 @Injectable()
 export class AccessTokenStrategy extends PassportStrategy(Strategy, 'jwt') {
-    constructor(config: ConfigService){
+    constructor(
+        config: ConfigService,
+        private userService: UsersService
+    ){
         const secret = config.get('accessSecret');
 
         if (!secret) throw new Error('accessSecret not defined!')
@@ -18,8 +23,12 @@ export class AccessTokenStrategy extends PassportStrategy(Strategy, 'jwt') {
         });
     }
 
-    async validate(payload: JwtPayload){
+    async validate(payload: JwtPayload):Promise<SafeUser>{
         
-        return payload
+        const user = await this.userService.findByEmail(payload.email);
+
+        const {passwordHash, refreshHashToken, ...safeUser} = user;
+
+        return safeUser;
     }
 }

@@ -34,7 +34,7 @@ export class UsersService {
         const user = await this.prismaService.user.findUnique({
             where:{
                 email
-            }
+            },
         })
         if(!user) throw new BadRequestException('No user found with this email!');
         return user;
