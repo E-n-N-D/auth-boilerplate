@@ -3,8 +3,6 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException,
 import { PrismaService } from '@/prisma/prisma.service';
 import { PrismaClientKnownRequestError } from "@/generated/prisma/internal/prismaNamespace";
 import { CreateUserDto, GoogleUserDto } from './dto';
-import argon from 'argon2';
-
 
 @Injectable()
 export class UsersService {

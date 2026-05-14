@@ -1,0 +1,16 @@
+name: authapp_test
+
+services:
+  test_database:
+    image: postgres:14
+    ports:
+      - 5433:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=authapp_test
+    networks:
+      - authapp_test
+networks:
+  authapp_test:
+
