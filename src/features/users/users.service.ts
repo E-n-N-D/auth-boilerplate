@@ -1,8 +1,9 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 
 import { PrismaService } from '@/prisma/prisma.service';
-import { PrismaClientKnownRequestError } from "@/generated/prisma/internal/prismaNamespace";
+// import { PrismaClientKnownRequestError } from "@/generated/prisma/internal/prismaNamespace";
 import { CreateUserDto, GoogleUserDto } from './dto';
+import { PrismaClientKnownRequestError } from '@prisma/client-runtime-utils';
 
 @Injectable()
 export class UsersService {
