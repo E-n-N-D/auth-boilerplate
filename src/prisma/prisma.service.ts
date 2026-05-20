@@ -19,4 +19,13 @@ export class PrismaService
   async onModuleInit() {
     await this.$connect();
   }
+
+  cleanDb(){
+    return this.$transaction([
+      this.otp.deleteMany(),
+      this.oAuthAccounts.deleteMany(),
+      this.user.deleteMany(),
+    ])
+  }
+
 }

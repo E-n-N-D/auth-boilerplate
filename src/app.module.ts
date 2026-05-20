@@ -9,7 +9,7 @@ import configuration from '@/config/env.config';
   imports: [ConfigModule.forRoot({
       isGlobal: true,
 
-      envFilePath:['.env'],
+      envFilePath:process.env.NODE_ENV === 'test' ? '.env.test' : '.env',
       load: [configuration]
     }),AuthModule, UsersModule, PrismaModule],
   providers: [],

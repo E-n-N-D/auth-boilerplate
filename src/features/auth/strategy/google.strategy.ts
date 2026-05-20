@@ -1,19 +1,20 @@
 import { UsersService } from "@/features/users/users.service";
-import { BadRequestException } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { PassportStrategy } from "@nestjs/passport";
 import { Profile, Strategy, VerifyCallback } from "passport-google-oauth20";
 import { SafeUser } from "../dto";
 
+@Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google'){
     constructor(
         config: ConfigService,
         private userService: UsersService
     ) {
         super({
-            clientID: config.getOrThrow('clientId'),
-            clientSecret: config.getOrThrow('clientSecret'),
-            callbackURL: config.getOrThrow('callbackURL'),
+            clientID: config.getOrThrow('google.clientId'),
+            clientSecret: config.getOrThrow('google.clientSecret'),
+            callbackURL: config.getOrThrow('google.callbackURL'),
             scope:['email', 'profile']
         })
     }

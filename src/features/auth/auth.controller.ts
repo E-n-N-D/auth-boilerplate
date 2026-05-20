@@ -3,7 +3,6 @@ import { AuthService } from "./auth.service";
 import { LoginDto, SafeUser, SignUpDto } from "./dto";
 import { GoogleGuard, RefreshTokenGuard } from "./guard";
 import { GetUser } from "./decorator";
-import type  { User } from "@/generated/prisma/client";
 
 @Controller('auth')
 export class AuthController {
