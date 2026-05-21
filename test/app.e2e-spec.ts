@@ -4,7 +4,7 @@ import { AppModule } from "@/app.module";
 import { INestApplication, ValidationPipe } from "@nestjs/common";
 import cookieParser from "cookie-parser";
 import { PrismaService } from "@/prisma/prisma.service";
-import { SignUpDto } from "@/features/auth/dto";
+import { LoginDto, SignUpDto } from "@/features/auth/dto";
 
 describe('App e2e', ()=>{
 
@@ -31,6 +31,8 @@ describe('App e2e', ()=>{
         prisma = app.get(PrismaService);
 
         await prisma.cleanDb();
+
+        pactum.request.setBaseUrl('http://localhost:3000/api')
     });
 
     afterAll(()=>{
@@ -38,23 +40,166 @@ describe('App e2e', ()=>{
     })
 
     describe('Auth', ()=>{
-        describe('Signup', ()=>{
-            it("should signup", ()=>{
-                const dto: SignUpDto = {
-                email: 'sushant.adhikari@gmail.com',
-                password: 'Helloworld@123',
-                firstName: "Sushant",
-                lastName: "Adhikari",
-            }
+        const dto: SignUpDto = {
+            email: 'sushant.adhikari@gmail.com',
+            password: 'Helloworld@123',
+            firstName: "Sushant",
+            lastName: "Adhikari",
+        }
 
-            return pactum
+        const loginDto: LoginDto = {
+            email: dto.email,
+            password: dto.password
+        }
+
+        describe('Signup', ()=>{
+
+            it("should throw bad request error 400 for bad email", ()=>{
+                return pactum
+                    .spec()
+                    .post('/auth/signup')
+                    .withBody({
+                        email: "a.com",
+                        password: dto.password,
+                        firstName: dto.firstName,
+                        lastName: dto.lastName
+                    })
+                    .expectStatus(400)
+                    .inspect()
+            })
+
+            it("should throw bad request error 400 for no email", ()=>{
+                return pactum
+                    .spec()
+                    .post('/auth/signup')
+                    .withBody({
+                        password: dto.password,
+                        firstName: dto.firstName,
+                        lastName: dto.lastName
+                    })
+                    .expectStatus(400)
+                    .inspect()
+            })
+
+            it("should throw bad request error 400 for no password", ()=>{
+                return pactum
+                    .spec()
+                    .post('/auth/signup')
+                    .withBody({
+                        email: dto.email,
+                        firstName: dto.firstName,
+                        lastName: dto.lastName
+                    })
+                    .expectStatus(400)
+                    .inspect()
+            })
+
+            it("should throw bad request error 400 for no firstName", ()=>{
+                return pactum
+                    .spec()
+                    .post('/auth/signup')
+                    .withBody({
+                        email: dto.email,
+                        password: dto.password,
+                        lastName: dto.lastName
+                    })
+                    .expectStatus(400)
+                    .inspect()
+            })
+
+            it("should throw bad request error 400 for no lastName", ()=>{
+                return pactum
+                    .spec()
+                    .post('/auth/signup')
+                    .withBody({
+                        email: dto.email,
+                        password: dto.password,
+                        firstName: dto.firstName,
+                    })
+                    .expectStatus(400)
+                    .inspect()
+            })
+
+            it("should signup", ()=>{
+
+                return pactum
+                    .spec()
+                    .post('/auth/signup')
+                    .withBody(dto)
+                    .expectStatus(201)
+                    .inspect()
+            })
+
+            it("should throw 403 error for used email", ()=>{
+
+                return pactum
                 .spec()
-                .post('http://localhost:3000/api/auth/signup')
+                .post('/auth/signup')
                 .withBody(dto)
-                .expectStatus(201)
+                .expectStatus(403)
                 .inspect()
             })
         })
+
+        describe("Login", () =>{
+
+            it("should throw bad request error 400 for no email", ()=>{
+                return pactum
+                .spec()
+                .post('/auth/login')
+                .withBody({
+                    password: loginDto.password
+                })
+                .expectStatus(400)
+                .inspect()
+            })
+            
+            it("should throw bad request error 400 for no password", ()=>{
+                return pactum
+                .spec()
+                .post('/auth/login')
+                .withBody({
+                    email: loginDto.email
+                })
+                .expectStatus(400)
+                .inspect()
+            })
+            
+            it("should throw bad request error 400 for incorrect email", ()=>{
+                return pactum
+                .spec()
+                .post('/auth/login')
+                .withBody({
+                    email: "a@gmail.com",
+                    password: loginDto.password
+                })
+                .expectStatus(400)
+                .inspect()
+            })
+
+            it("should throw bad request error 400 for incorrect password", ()=>{
+                return pactum
+                .spec()
+                .post('/auth/login')
+                .withBody({
+                    email: loginDto.email,
+                    password: "aaaa"
+                })
+                .expectStatus(400)
+                .inspect()
+            })
+
+            it("should login", ()=>{
+
+                return pactum
+                .spec()
+                .post('/auth/login')
+                .withBody(loginDto)
+                .expectStatus(200)
+                .inspect()
+            })
+        })
+
     })
     describe('User', ()=>{})
     describe('OTP', ()=>{})

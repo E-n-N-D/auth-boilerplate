@@ -3,7 +3,6 @@ import { IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString } from "class-vali
 export class CreateUserDto {
 
     @IsEmail()
-    @IsNotEmpty()
     email!: string;
 
     @IsOptional()
