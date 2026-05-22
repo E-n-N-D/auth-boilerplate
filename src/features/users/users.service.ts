@@ -1,9 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 
 import { PrismaService } from '@/prisma/prisma.service';
-// import { PrismaClientKnownRequestError } from "@/generated/prisma/internal/prismaNamespace";
-import { CreateUserDto, GoogleUserDto } from './dto';
+import { CreateUserDto, GoogleUserDto, UpdateUserDto } from './dto';
 import { PrismaClientKnownRequestError } from '@prisma/client-runtime-utils';
+import { SafeUser } from '../auth/dto';
 
 @Injectable()
 export class UsersService {
@@ -60,6 +60,48 @@ export class UsersService {
 
             throw new BadRequestException("Couldn\'t create OAuth account. Try another account!")
         }
+    }
+
+    async updateUser(id: string, dto: UpdateUserDto){
+
+        const user = await this.prismaService.user.update({
+            where:{
+                id: id
+            },
+            data: dto
+        })
+        const safeUser: SafeUser = user;
+        return {
+            success: true,
+            message: "User updated successfully",
+            user: safeUser
+        }
+    }
+
+    async updatePassword(id: string, passwordHash: string){
+        const user = await this.prismaService.user.update({
+            where:{
+                id: id
+            },
+            data: {
+                passwordHash: passwordHash
+            }
+        })
+        if(!user) throw new BadRequestException('No user found with this email!');
+        return;
+    }
+
+    async invalidateRefreshToken(id: string){
+        const user = await this.prismaService.user.update({
+            where:{
+                id: id
+            },
+            data: {
+                refreshHashToken: ""
+            }
+        })
+        if(!user) throw new BadRequestException('No user found with this email!');
+        return;
     }
 
 }

@@ -1,12 +1,11 @@
 import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
-import { JwtPayload, LoginDto, SafeUser, SignUpDto } from "./dto";
+import { JwtPayload, LoginDto, SafeUser, SignUpDto, UpdatePasswordDto } from "./dto";
 import * as argon from 'argon2';
 import { UsersService } from "@/features/users/users.service";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
 import { PrismaService } from "@/prisma/prisma.service";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/client";
-import { User } from "@/generated/prisma/client";
 
 @Injectable()
 export class AuthService {
@@ -53,8 +52,6 @@ export class AuthService {
         } 
 
         const {accessToken, refreshToken, safeUser} = await this.updateRefreshTokens(payload);
-
-        // const {passwordHash, refreshHashToken, ...safeUser} = user;
 
         return {
             success: true,
@@ -151,5 +148,34 @@ export class AuthService {
 
         if (!isMatching) throw new UnauthorizedException('User not authorized!')
         return safeUser;
+    }
+
+    async updatePassword(user: SafeUser, updatedPassword: UpdatePasswordDto){
+        const passwordHash = await argon.hash(updatedPassword.password);
+
+        await this.userService.updatePassword(user.id, passwordHash)
+
+        const payload: JwtPayload = {
+            userId: user.id,
+            email: user.email
+        }
+
+        const {accessToken, refreshToken, safeUser} = await this.updateRefreshTokens(payload);
+
+        return {
+            success: true,
+            message: "Password updated successfully",
+            accessToken,
+            refreshToken
+        }
+    }
+
+    async logout(userId: string){
+        await this.userService.invalidateRefreshToken(userId);
+
+        return {
+            success: true,
+            message: "Logged out successfully",
+        }
     }
 }

@@ -2,10 +2,13 @@ import { Body, Controller, Get, HttpCode, HttpStatus, Post, Put, UseGuards } fro
 import { AccessTokenGuard } from '@/features/auth/guard';
 import { GetUser } from '../auth/decorator';
 import { SafeUser } from '../auth/dto';
+import { UsersService } from './users.service';
+import { UpdateUserDto } from './dto';
 
 @UseGuards(AccessTokenGuard)
 @Controller('users')
 export class UsersController {
+    constructor(private userService: UsersService){}
 
     @HttpCode(HttpStatus.OK)
     @Get('me')
@@ -17,7 +20,9 @@ export class UsersController {
         }
     }
 
-    @Put()
-    async updateUser(){}
+    @Put('update')
+    async updateUser(@GetUser() user: SafeUser, dto: UpdateUserDto){
+        return this.userService.updateUser(user.id, dto)
+    }
 
 }

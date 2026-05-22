@@ -1,7 +1,7 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from "@nestjs/common";
 import { AuthService } from "./auth.service";
-import { LoginDto, SafeUser, SignUpDto } from "./dto";
-import { GoogleGuard, RefreshTokenGuard } from "./guard";
+import { LoginDto, SafeUser, SignUpDto, UpdatePasswordDto } from "./dto";
+import { AccessTokenGuard, GoogleGuard, RefreshTokenGuard } from "./guard";
 import { GetUser } from "./decorator";
 
 @Controller('auth')
@@ -33,8 +33,16 @@ export class AuthController {
     }
 
     @HttpCode(HttpStatus.OK)
-    @Get('logout')
-    async logout(){
+    @UseGuards(AccessTokenGuard)
+    @Post('updatePassword')
+    async updatePassword(@GetUser() user: SafeUser, updatedPassword: UpdatePasswordDto){
+        return this.authService.updatePassword(user, updatedPassword);
+    }
 
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(AccessTokenGuard)
+    @Get('logout')
+    async logout(@GetUser() user: SafeUser){
+        return this.authService.logout(user.id)
     }
 }
