@@ -35,7 +35,6 @@ export class UsersService {
                 email
             },
         })
-        if(!user) throw new BadRequestException('No user found with this email!');
         return user;
     }
 

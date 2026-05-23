@@ -41,7 +41,7 @@ export class AuthService {
 
     async login(dto: LoginDto){
         const user = await this.userService.findByEmail(dto.email);
-        if(!user.passwordHash) throw new BadRequestException('Password not created for this account. Log In using providers!')
+        if(!user || !user.passwordHash) throw new BadRequestException('Try again or log in using providers!')
 
         const isMatching = await argon.verify(user.passwordHash, dto.password);
         if(!isMatching) throw new BadRequestException('Incorrect Password!')

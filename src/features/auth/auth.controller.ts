@@ -45,4 +45,5 @@ export class AuthController {
     async logout(@GetUser() user: SafeUser){
         return this.authService.logout(user.id)
     }
+
 }

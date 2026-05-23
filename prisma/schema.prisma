@@ -29,18 +29,27 @@ model User {
   @@map("users")
 }
 
-// Can be removed if doing simple verification
 model Otp {
   id        String    @id @default(uuid())
   userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  code      Int
+  purpose   OtpPurpose
+  hash      String
+  attempts  Int       @default(0)
   expiresAt DateTime
   used      Boolean   @default(false)
-
   createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, purpose, used])
+  
   @@map("otps")
+}
+
+enum OtpPurpose {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+  TWO_FACTOR
 }
 
 // model for storing data for OAuth logins for different providers
