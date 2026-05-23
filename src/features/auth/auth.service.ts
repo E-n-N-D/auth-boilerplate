@@ -75,7 +75,7 @@ export class AuthService {
     }
 
     async signAccessToken(payload: JwtPayload){
-        const accessSecret = this.config.get('ACCESS_SECRET');
+        const accessSecret = this.config.get('accessSecret');
         return await this.jwtService.signAsync(payload,{
             expiresIn: '15m',
             secret: accessSecret
@@ -83,7 +83,7 @@ export class AuthService {
     }
 
     async signRefreshToken(payload: JwtPayload){
-        const refreshSecret = this.config.get('REFRESH_SECRET');
+        const refreshSecret = this.config.get('refreshSecret');
 
         return await this.jwtService.signAsync(payload,{
             expiresIn: '30d',
@@ -94,7 +94,7 @@ export class AuthService {
     async updateRefreshTokens(payload: JwtPayload){
 
         const accessToken = await this.signAccessToken(payload);
-        const refreshToken = await this.signAccessToken(payload);
+        const refreshToken = await this.signRefreshToken(payload);
 
         const refreshHash = await argon.hash(refreshToken)
         try {
@@ -107,7 +107,7 @@ export class AuthService {
                 }
             });
 
-            const {passwordHash, refreshHashToken, ...safeUser} = user
+            const safeUser = SafeUser.from(user);
 
             return {accessToken, refreshToken, safeUser}
 
@@ -126,11 +126,14 @@ export class AuthService {
             userId: user.id,
             email: user.email
         }
+
+        const safeUser = SafeUser.from(user);
+
         const accessToken = await this.signAccessToken(payload)
         return {
             success: true,
             message: "Token refreshed successfully",
-            user,
+            user: safeUser,
             accessToken
         }
     }
@@ -144,9 +147,9 @@ export class AuthService {
         if(!user || !user.refreshHashToken) throw new BadRequestException('Invalid refreshToken');
 
         const isMatching = await argon.verify(user.refreshHashToken, refreshToken);
-        const safeUser = user as SafeUser
-
         if (!isMatching) throw new UnauthorizedException('User not authorized!')
+            
+        const safeUser = user as SafeUser
         return safeUser;
     }
 

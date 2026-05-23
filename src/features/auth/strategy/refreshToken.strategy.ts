@@ -18,7 +18,7 @@ const extractRefreshToken = (req: Request)=>{
         req.headers.authorization.split(' ');
 
         if (type === 'Bearer') {
-        return token;
+            return token;
         }
     }
 

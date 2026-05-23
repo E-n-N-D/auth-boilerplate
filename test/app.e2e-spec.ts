@@ -5,6 +5,7 @@ import { INestApplication, ValidationPipe } from "@nestjs/common";
 import cookieParser from "cookie-parser";
 import { PrismaService } from "@/prisma/prisma.service";
 import { LoginDto, SignUpDto } from "@/features/auth/dto";
+import { response } from 'express';
 
 describe('App e2e', ()=>{
 
@@ -52,7 +53,16 @@ describe('App e2e', ()=>{
             password: dto.password
         }
 
+        //-------------------- Signup test -------------------------------//
         describe('Signup', ()=>{
+
+            it("should throw error 400 for empty body", ()=>{
+                return pactum
+                    .spec()
+                    .post('/auth/signup')
+                    .expectStatus(400)
+                    .inspect()
+            })
 
             it("should throw bad request error 400 for bad email", ()=>{
                 return pactum
@@ -65,7 +75,7 @@ describe('App e2e', ()=>{
                         lastName: dto.lastName
                     })
                     .expectStatus(400)
-                    .inspect()
+                    // .inspect()
             })
 
             it("should throw bad request error 400 for no email", ()=>{
@@ -78,7 +88,7 @@ describe('App e2e', ()=>{
                         lastName: dto.lastName
                     })
                     .expectStatus(400)
-                    .inspect()
+                    // .inspect()
             })
 
             it("should throw bad request error 400 for no password", ()=>{
@@ -91,7 +101,7 @@ describe('App e2e', ()=>{
                         lastName: dto.lastName
                     })
                     .expectStatus(400)
-                    .inspect()
+                    // .inspect()
             })
 
             it("should throw bad request error 400 for no firstName", ()=>{
@@ -104,7 +114,7 @@ describe('App e2e', ()=>{
                         lastName: dto.lastName
                     })
                     .expectStatus(400)
-                    .inspect()
+                    // .inspect()
             })
 
             it("should throw bad request error 400 for no lastName", ()=>{
@@ -141,7 +151,17 @@ describe('App e2e', ()=>{
             })
         })
 
+
+        //------------------- Login test -------------------------------//
         describe("Login", () =>{
+
+            it("should throw error 400 for empty body", ()=>{
+                return pactum
+                    .spec()
+                    .post('/auth/login')
+                    .expectStatus(400)
+                    .inspect()
+            })
 
             it("should throw bad request error 400 for no email", ()=>{
                 return pactum
@@ -195,6 +215,85 @@ describe('App e2e', ()=>{
                 .spec()
                 .post('/auth/login')
                 .withBody(loginDto)
+                .expectStatus(200)
+                .stores("AccessToken","res.body.accessToken")
+                .stores("RefreshToken","res.body.refreshToken")
+                .inspect()
+
+            })
+        })
+
+        describe('Update Password', ()=>{
+
+            it("should throw unauthorized error 401 if accessToken not provided", ()=>{
+                return pactum
+                    .spec()
+                    .post('/auth/updatePassword')
+                    .expectStatus(401)
+                    .inspect()
+            })
+
+            it("should throw bad request for empty request body", ()=>{
+                return pactum
+                .spec()
+                .post('/auth/updatePassword')
+                .withCookies("refreshToken","$S{RefreshToken}")
+                .expectStatus(400)
+                .inspect()
+            })
+
+            it("should throw bad request for less character Password", ()=>{
+                return pactum
+                .spec()
+                .post('/auth/updatePassword')
+                .withCookies("refreshToken","$S{RefreshToken}")
+                .withBody({
+                    password: "aaaas"
+                })
+                .expectStatus(400)
+                .inspect()
+            })
+
+            it("should update password", async()=>{
+                // waiting some seconds for refreshTokens to be different
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                return pactum
+                .spec()
+                .post('/auth/updatePassword')
+                .withCookies("refreshToken","$S{RefreshToken}")
+                .withBody({
+                    password: loginDto.password
+                })
+                .stores("AccessTokenNew","res.body.accessToken")
+                .stores("RefreshTokenNew","res.body.refreshToken")
+                .expectStatus(200)
+                .inspect()
+            })
+        })
+
+        describe("Refresh Tokens", ()=>{
+            it("should throw unauthorized error 401 on missing refreshToken",()=>{
+                return pactum
+                .spec()
+                .get('/auth/refresh')
+                .expectStatus(401)
+                .inspect()
+            })
+
+            it("should throw unauthorized error 401 on bad refreshToken",()=>{
+                return pactum
+                .spec()
+                .get('/auth/refresh')
+                .withCookies("refreshToken","$S{RefreshToken}")
+                .expectStatus(401)
+                .inspect()
+            })
+
+            it("should refresh the tokens",()=>{
+                return pactum
+                .spec()
+                .get('/auth/refresh')
+                .withCookies("refreshToken","$S{RefreshTokenNew}")
                 .expectStatus(200)
                 .inspect()
             })

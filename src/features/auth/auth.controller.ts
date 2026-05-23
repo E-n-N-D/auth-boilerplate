@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { LoginDto, SafeUser, SignUpDto, UpdatePasswordDto } from "./dto";
 import { AccessTokenGuard, GoogleGuard, RefreshTokenGuard } from "./guard";
@@ -19,29 +19,29 @@ export class AuthController {
         return this.authService.googleLogin({email: user.email, userId: user.id})
     }
 
-    @HttpCode(HttpStatus.OK)
     @Post('login')
+    @HttpCode(HttpStatus.OK)
     async login(@Body() dto:LoginDto){
         return this.authService.login(dto);
     }
 
+    @Get('refresh')
     @HttpCode(HttpStatus.OK)
     @UseGuards(RefreshTokenGuard)
-    @Get('refresh')
     async refreshTokens(@GetUser() user: SafeUser){
         return this.authService.refreshTokens(user)
     }
 
-    @HttpCode(HttpStatus.OK)
-    @UseGuards(AccessTokenGuard)
     @Post('updatePassword')
-    async updatePassword(@GetUser() user: SafeUser, updatedPassword: UpdatePasswordDto){
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(RefreshTokenGuard)
+    async updatePassword(@GetUser() user: SafeUser, @Body() updatedPassword: UpdatePasswordDto){
         return this.authService.updatePassword(user, updatedPassword);
     }
 
+    @Get('logout')
     @HttpCode(HttpStatus.OK)
     @UseGuards(AccessTokenGuard)
-    @Get('logout')
     async logout(@GetUser() user: SafeUser){
         return this.authService.logout(user.id)
     }
