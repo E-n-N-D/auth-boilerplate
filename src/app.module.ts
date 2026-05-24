@@ -5,6 +5,7 @@ import { PrismaModule } from '@/prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
 import { OtpModule } from './features/otp/otp.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { MailModule } from './features/mail/mail.module';
 import configuration from '@/config/env.config';
 
 @Module({
@@ -15,7 +16,7 @@ import configuration from '@/config/env.config';
       load: [configuration]
     }),
     ScheduleModule.forRoot(),
-    AuthModule, UsersModule, PrismaModule, OtpModule],
+    AuthModule, UsersModule, PrismaModule, OtpModule, MailModule],
   providers: [],
 })
 export class AppModule {}

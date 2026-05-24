@@ -1,11 +1,15 @@
 import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
-import { JwtPayload, LoginDto, SafeUser, SignUpDto, UpdatePasswordDto } from "./dto";
+import { JwtPayload, LoginDto, OtpVerifyDTO, SafeUser, SignUpDto, UpdatePasswordDto } from "./dto";
 import * as argon from 'argon2';
 import { UsersService } from "@/features/users/users.service";
 import { JwtService } from "@nestjs/jwt";
 import { ConfigService } from "@nestjs/config";
 import { PrismaService } from "@/prisma/prisma.service";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/client";
+import { OtpService } from "@/features/otp/otp.service";
+import { MailService } from "@/features/mail/mail.service";
+import { OtpPurpose } from "@prisma/client";
+import { VerifyOtpDto } from "../otp/dto";
 
 @Injectable()
 export class AuthService {
@@ -14,6 +18,8 @@ export class AuthService {
         private prismaService: PrismaService,
         private jwtService: JwtService,
         private config: ConfigService,
+        private otpService: OtpService,
+        private mailService: MailService
     ){}
     
     async signUp(dto: SignUpDto){
@@ -71,6 +77,52 @@ export class AuthService {
             user: safeUser,
             accessToken,
             refreshToken
+        }
+    }
+
+    async sendEmailVerification(user: SafeUser){
+        const otp = await this.otpService.createOtp(user.id, OtpPurpose.EMAIL_VERIFICATION)
+        this.mailService.sendEmailVerificationOtp(user.email, otp)
+        return {
+            success: true,
+            message: "Email Verification code sent!"
+        }
+    }
+
+    async sendPasswordResetVerification(user: SafeUser){
+        if (!user.isVerified) throw new BadRequestException("Email not verified yet!")
+        const otp = await this.otpService.createOtp(user.id, OtpPurpose.PASSWORD_RESET)
+        this.mailService.sendPasswordResetOtp(user.email, otp)
+        return {
+            success: true,
+            message: "Password reset verification code sent!"
+        }
+    }
+
+    async sendTwoFactorVerification(user: SafeUser){
+        if (!user.isVerified) throw new BadRequestException("Email not verified yet!")
+
+        const otp = await this.otpService.createOtp(user.id, OtpPurpose.TWO_FACTOR)
+        this.mailService.sendTwoFactorOtp(user.email, otp)
+        return {
+            success: true,
+            message: "Two Factor verification code sent!"
+        }
+    }
+
+    async verifyOTP(user: SafeUser, otp: OtpVerifyDTO){
+        const otp_purpose = otp.purpose == "email" ? OtpPurpose.EMAIL_VERIFICATION : otp.purpose == "password-reset" ? OtpPurpose.PASSWORD_RESET: OtpPurpose.TWO_FACTOR
+        
+        const verifyOtp: VerifyOtpDto = {
+            userId: user.id,
+            submitted: otp.submitted,
+            purpose: otp_purpose
+        }
+        await this.otpService.verifyOtp(verifyOtp)
+
+        return {
+            success: true,
+            message: "Otp Verification successful"
         }
     }
 

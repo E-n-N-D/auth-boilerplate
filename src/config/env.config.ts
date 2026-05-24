@@ -13,4 +13,10 @@ export default () => ({
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: process.env.GOOGLE_CALLBACK_URL,
   },
+
+  resend: {
+    apiKey: process.env.RESEND_API_KEY,
+    mailFrom: process.env.MAIL_FROM
+  }
+
 });

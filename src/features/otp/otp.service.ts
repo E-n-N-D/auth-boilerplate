@@ -3,6 +3,7 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { OtpPurpose } from '@prisma/client';
 import * as argon2 from 'argon2';
 import { randomInt } from 'crypto';
+import { VerifyOtpDto } from './dto';
 
 const OTP_LENGTH   = 6;
 const OTP_TTL_MS   = 5 * 60 * 1000; // 5 minutes
@@ -49,11 +50,9 @@ export class OtpService {
   }
 
   async verifyOtp(
-    userId: string,
-    purpose: OtpPurpose,
-    submitted: string,
+    verifyOtpDto: VerifyOtpDto
   ): Promise<void> {
-    const record = await this.findActive(userId, purpose);
+    const record = await this.findActive(verifyOtpDto.userId, verifyOtpDto.purpose);
 
     if (!record) this.fail();
 
@@ -75,7 +74,7 @@ export class OtpService {
       data: { attempts: { increment: 1 } },
     });
 
-    const valid = await argon2.verify(record.hash, submitted);
+    const valid = await argon2.verify(record.hash, verifyOtpDto.submitted);
 
     if (!valid) this.fail();
 

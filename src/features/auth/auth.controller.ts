@@ -1,6 +1,6 @@
 import { BadRequestException, Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from "@nestjs/common";
 import { AuthService } from "./auth.service";
-import { LoginDto, SafeUser, SignUpDto, UpdatePasswordDto } from "./dto";
+import { LoginDto, OtpVerifyDTO, SafeUser, SignUpDto, UpdatePasswordDto } from "./dto";
 import { AccessTokenGuard, GoogleGuard, RefreshTokenGuard } from "./guard";
 import { GetUser } from "./decorator";
 
@@ -44,6 +44,34 @@ export class AuthController {
     @UseGuards(AccessTokenGuard)
     async logout(@GetUser() user: SafeUser){
         return this.authService.logout(user.id)
+    }
+
+    @Get('emailVerification')
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(AccessTokenGuard)
+    async emailVerification(@GetUser() user: SafeUser){
+        return this.authService.sendEmailVerification(user);
+    }
+
+    @Get('resetPassword')
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(AccessTokenGuard)
+    async resetPassword(@GetUser() user: SafeUser){
+        return this.authService.sendEmailVerification(user);
+    }
+
+    @Get('twoFactor')
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(AccessTokenGuard)
+    async twoFactor(@GetUser() user: SafeUser){
+        return this.authService.sendTwoFactorVerification(user);
+    }
+
+    @Post('verifyOTP')
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(AccessTokenGuard)
+    async verifyOTP(@GetUser() user: SafeUser, @Body() otp: OtpVerifyDTO){
+        return this.authService.verifyOTP(user, otp);
     }
 
 }
