@@ -90,6 +90,19 @@ export class UsersService {
         return;
     }
 
+    async verifyUser(id: string){
+        const user = await this.prismaService.user.update({
+            where:{
+                id: id
+            },
+            data: {
+                isVerified: true
+            }
+        })
+        if(!user) throw new BadRequestException('No user found to verify');
+        return;
+    }
+
     async invalidateRefreshToken(id: string){
         const user = await this.prismaService.user.update({
             where:{

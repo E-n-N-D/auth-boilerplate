@@ -89,6 +89,27 @@ export class AuthService {
         }
     }
 
+    async verifyEmail(user: SafeUser, otp: string){
+        if(user.isVerified){
+            return {
+                success: true,
+                message: "Email already verified!"
+            }      
+        }
+        const verifyOtp: VerifyOtpDto = {
+            userId: user.id,
+            submitted: otp,
+            purpose: OtpPurpose.EMAIL_VERIFICATION
+        }
+        await this.otpService.verifyOtp(verifyOtp)
+        await this.userService.verifyUser(user.id);
+
+        return {
+            success: true,
+            message: "Email verified successfully!"
+        }
+    }
+
     async sendPasswordResetVerification(user: SafeUser){
         if (!user.isVerified) throw new BadRequestException("Email not verified yet!")
         const otp = await this.otpService.createOtp(user.id, OtpPurpose.PASSWORD_RESET)
@@ -111,7 +132,7 @@ export class AuthService {
     }
 
     async verifyOTP(user: SafeUser, otp: OtpVerifyDTO){
-        const otp_purpose = otp.purpose == "email" ? OtpPurpose.EMAIL_VERIFICATION : otp.purpose == "password-reset" ? OtpPurpose.PASSWORD_RESET: OtpPurpose.TWO_FACTOR
+        const otp_purpose = otp.purpose == "password-reset" ? OtpPurpose.PASSWORD_RESET: OtpPurpose.TWO_FACTOR
         
         const verifyOtp: VerifyOtpDto = {
             userId: user.id,

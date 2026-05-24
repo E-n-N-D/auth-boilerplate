@@ -52,6 +52,13 @@ export class AuthController {
     async emailVerification(@GetUser() user: SafeUser){
         return this.authService.sendEmailVerification(user);
     }
+    
+    @Post('verifyEmail')
+    @HttpCode(HttpStatus.OK)
+    @UseGuards(AccessTokenGuard)
+    async verifyEmail(@GetUser() user: SafeUser, @Body('otp') otp: string){
+        return this.authService.verifyEmail(user, otp);
+    }
 
     @Get('resetPassword')
     @HttpCode(HttpStatus.OK)
