@@ -89,13 +89,16 @@ export class AuthService {
         }
     }
 
-    async verifyEmail(user: SafeUser, otp: string){
+    async verifyEmail(user: SafeUser, otp?: string){
         if(user.isVerified){
             return {
                 success: true,
                 message: "Email already verified!"
             }      
         }
+
+        if(!otp) throw new BadRequestException("Otp not found!")
+
         const verifyOtp: VerifyOtpDto = {
             userId: user.id,
             submitted: otp,

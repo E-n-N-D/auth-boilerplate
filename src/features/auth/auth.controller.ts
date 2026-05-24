@@ -56,7 +56,7 @@ export class AuthController {
     @Post('verifyEmail')
     @HttpCode(HttpStatus.OK)
     @UseGuards(AccessTokenGuard)
-    async verifyEmail(@GetUser() user: SafeUser, @Body('otp') otp: string){
+    async verifyEmail(@GetUser() user: SafeUser, @Body('otp') otp?: string){
         return this.authService.verifyEmail(user, otp);
     }
 
@@ -64,7 +64,7 @@ export class AuthController {
     @HttpCode(HttpStatus.OK)
     @UseGuards(AccessTokenGuard)
     async resetPassword(@GetUser() user: SafeUser){
-        return this.authService.sendEmailVerification(user);
+        return this.authService.sendPasswordResetVerification(user);
     }
 
     @Get('twoFactor')

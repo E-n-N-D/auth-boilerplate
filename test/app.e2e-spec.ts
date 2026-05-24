@@ -5,17 +5,26 @@ import { INestApplication, ValidationPipe } from "@nestjs/common";
 import cookieParser from "cookie-parser";
 import { PrismaService } from "@/prisma/prisma.service";
 import { LoginDto, SignUpDto } from "@/features/auth/dto";
-import { response } from 'express';
+import { MailService } from '@/features/mail/mail.service';
+import { MockMailService } from './mock-mail.service';
 
 describe('App e2e', ()=>{
 
     let app: INestApplication;
     let prisma: PrismaService;
+    let mockMailService: MockMailService;
 
     beforeAll(async ()=>{
+
+        mockMailService = new MockMailService();
+
         const moduleRef = await Test.createTestingModule({
             imports: [AppModule]
-        }).compile();
+        })
+        .overrideProvider(MailService)
+        .useValue(mockMailService)    
+        .compile();
+
         app = moduleRef.createNestApplication();
         app.useGlobalPipes(new ValidationPipe({
             whitelist: true // trims the values not defined in the dtos 
@@ -61,7 +70,7 @@ describe('App e2e', ()=>{
                     .spec()
                     .post('/auth/signup')
                     .expectStatus(400)
-                    .inspect()
+                    
             })
 
             it("should throw bad request error 400 for bad email", ()=>{
@@ -75,7 +84,7 @@ describe('App e2e', ()=>{
                         lastName: dto.lastName
                     })
                     .expectStatus(400)
-                    // .inspect()
+                    // 
             })
 
             it("should throw bad request error 400 for no email", ()=>{
@@ -88,7 +97,7 @@ describe('App e2e', ()=>{
                         lastName: dto.lastName
                     })
                     .expectStatus(400)
-                    // .inspect()
+                    // 
             })
 
             it("should throw bad request error 400 for no password", ()=>{
@@ -101,7 +110,7 @@ describe('App e2e', ()=>{
                         lastName: dto.lastName
                     })
                     .expectStatus(400)
-                    // .inspect()
+                    // 
             })
 
             it("should throw bad request error 400 for no firstName", ()=>{
@@ -114,7 +123,7 @@ describe('App e2e', ()=>{
                         lastName: dto.lastName
                     })
                     .expectStatus(400)
-                    // .inspect()
+                    // 
             })
 
             it("should throw bad request error 400 for no lastName", ()=>{
@@ -127,7 +136,7 @@ describe('App e2e', ()=>{
                         firstName: dto.firstName,
                     })
                     .expectStatus(400)
-                    .inspect()
+                    
             })
 
             it("should signup", ()=>{
@@ -137,7 +146,7 @@ describe('App e2e', ()=>{
                     .post('/auth/signup')
                     .withBody(dto)
                     .expectStatus(201)
-                    .inspect()
+                    
             })
 
             it("should throw 403 error for used email", ()=>{
@@ -147,10 +156,9 @@ describe('App e2e', ()=>{
                 .post('/auth/signup')
                 .withBody(dto)
                 .expectStatus(403)
-                .inspect()
+                
             })
         })
-
 
         //------------------- Login test -------------------------------//
         describe("Login", () =>{
@@ -160,7 +168,7 @@ describe('App e2e', ()=>{
                     .spec()
                     .post('/auth/login')
                     .expectStatus(400)
-                    .inspect()
+                    
             })
 
             it("should throw bad request error 400 for no email", ()=>{
@@ -171,7 +179,7 @@ describe('App e2e', ()=>{
                     password: loginDto.password
                 })
                 .expectStatus(400)
-                .inspect()
+                
             })
             
             it("should throw bad request error 400 for no password", ()=>{
@@ -182,7 +190,7 @@ describe('App e2e', ()=>{
                     email: loginDto.email
                 })
                 .expectStatus(400)
-                .inspect()
+                
             })
             
             it("should throw bad request error 400 for incorrect email", ()=>{
@@ -194,7 +202,7 @@ describe('App e2e', ()=>{
                     password: loginDto.password
                 })
                 .expectStatus(400)
-                .inspect()
+                
             })
 
             it("should throw bad request error 400 for incorrect password", ()=>{
@@ -206,7 +214,7 @@ describe('App e2e', ()=>{
                     password: "aaaa"
                 })
                 .expectStatus(400)
-                .inspect()
+                
             })
 
             it("should login", ()=>{
@@ -218,11 +226,12 @@ describe('App e2e', ()=>{
                 .expectStatus(200)
                 .stores("AccessToken","res.body.accessToken")
                 .stores("RefreshToken","res.body.refreshToken")
-                .inspect()
+                
 
             })
         })
 
+        //------------------- Update Password test -------------------------------//
         describe('Update Password', ()=>{
 
             it("should throw unauthorized error 401 if accessToken not provided", ()=>{
@@ -230,7 +239,7 @@ describe('App e2e', ()=>{
                     .spec()
                     .post('/auth/updatePassword')
                     .expectStatus(401)
-                    .inspect()
+                    
             })
 
             it("should throw bad request for empty request body", ()=>{
@@ -239,7 +248,7 @@ describe('App e2e', ()=>{
                 .post('/auth/updatePassword')
                 .withCookies("refreshToken","$S{RefreshToken}")
                 .expectStatus(400)
-                .inspect()
+                
             })
 
             it("should throw bad request for less character Password", ()=>{
@@ -251,7 +260,7 @@ describe('App e2e', ()=>{
                     password: "aaaas"
                 })
                 .expectStatus(400)
-                .inspect()
+                
             })
 
             it("should update password", async()=>{
@@ -267,17 +276,18 @@ describe('App e2e', ()=>{
                 .stores("AccessTokenNew","res.body.accessToken")
                 .stores("RefreshTokenNew","res.body.refreshToken")
                 .expectStatus(200)
-                .inspect()
+                
             })
         })
 
+        //------------------- Refresh Tokens test -------------------------------//
         describe("Refresh Tokens", ()=>{
             it("should throw unauthorized error 401 on missing refreshToken",()=>{
                 return pactum
                 .spec()
                 .get('/auth/refresh')
                 .expectStatus(401)
-                .inspect()
+                
             })
 
             it("should throw unauthorized error 401 on bad refreshToken",()=>{
@@ -286,7 +296,7 @@ describe('App e2e', ()=>{
                 .get('/auth/refresh')
                 .withCookies("refreshToken","$S{RefreshToken}")
                 .expectStatus(401)
-                .inspect()
+                
             })
 
             it("should refresh the tokens",()=>{
@@ -295,11 +305,207 @@ describe('App e2e', ()=>{
                 .get('/auth/refresh')
                 .withCookies("refreshToken","$S{RefreshTokenNew}")
                 .expectStatus(200)
-                .inspect()
+                
             })
         })
 
+        // ─── Email Verification ──────────────────────────────────────────────────
+        describe('Email Verification', () => {
+            let otp: string;
+
+            it('should throw 401 if no access token', () => {
+                return pactum
+                    .spec()
+                    .get('/auth/emailVerification')
+                    .expectStatus(401);
+            });
+
+            // ONE request — OTP captured and reused across the next two tests
+            it('should send email verification OTP', async () => {
+                await pactum
+                    .spec()
+                    .get('/auth/emailVerification')
+                    .withHeaders('Authorization', 'Bearer $S{AccessToken}')
+                    .expectStatus(200)
+                    .expectBodyContains('Email Verification code sent!');
+
+                otp = mockMailService.captureOtp();
+                expect(otp).toMatch(/^\d{6}$/);
+            });
+
+            // Uses the active OTP session but submits a wrong value — OTP stays active
+            it('should throw 400 for wrong OTP', () => {
+                return pactum
+                    .spec()
+                    .post('/auth/verifyEmail')
+                    .withHeaders('Authorization', 'Bearer $S{AccessToken}')
+                    .withBody({ otp: '000000' })
+                    .expectStatus(400);
+            });
+
+            // Same OTP from two tests ago — still valid because wrong attempt doesn't consume it
+            it('should verify email with correct OTP', () => {
+                return pactum
+                    .spec()
+                    .post('/auth/verifyEmail')
+                    .withHeaders('Authorization', 'Bearer $S{AccessToken}')
+                    .withBody({ otp })
+                    .expectStatus(200)
+                    .expectBodyContains('Email verified successfully!');
+            });
+
+            // OTP is now consumed — any further call short-circuits on isVerified check
+            it('should return already verified if called again', () => {
+                return pactum
+                    .spec()
+                    .post('/auth/verifyEmail')
+                    .withHeaders('Authorization', 'Bearer $S{AccessToken}')
+                    .withBody({ otp: '123456' })
+                    .expectStatus(200)
+                    .expectBodyContains('Email already verified!');
+            });
+        });
+
+        // ─── Password Reset OTP ───────────────────────────────────────────────────
+        describe('Password Reset OTP', () => {
+            let otp: string;
+
+            it('should throw 401 if no access token', () => {
+                return pactum
+                    .spec()
+                    .get('/auth/resetPassword')
+                    .expectStatus(401);
+            });
+
+            it('should send password reset OTP', async () => {
+                await pactum
+                    .spec()
+                    .get('/auth/resetPassword')
+                    .withHeaders('Authorization', 'Bearer $S{AccessToken}')
+                    .expectStatus(200)
+                    .expectBodyContains('Password reset verification code sent!');
+
+                otp = mockMailService.captureOtp();
+                expect(otp).toMatch(/^\d{6}$/);
+            });
+
+            // Submit wrong value — OTP still active afterwards
+            it('should throw 400 for wrong OTP', () => {
+                return pactum
+                    .spec()
+                    .post('/auth/verifyOTP')
+                    .withHeaders('Authorization', 'Bearer $S{AccessToken}')
+                    .withBody({ submitted: '000000', purpose: 'password-reset' })
+                    .expectStatus(400);
+            });
+
+            // Correct OTP — consumed after this
+            it('should verify password reset OTP', () => {
+                return pactum
+                    .spec()
+                    .post('/auth/verifyOTP')
+                    .withHeaders('Authorization', 'Bearer $S{AccessToken}')
+                    .withBody({ submitted: otp, purpose: 'password-reset' })
+                    .expectStatus(200)
+                    .expectBodyContains('Otp Verification successful');
+            });
+
+            // OTP is now marked used — reusing it should fail
+            // Cooldown is 0 in test env so re-requesting is fine
+            it('should throw 400 on OTP reuse', async () => {
+                await pactum
+                    .spec()
+                    .get('/auth/resetPassword')
+                    .withHeaders('Authorization', 'Bearer $S{AccessToken}');
+
+                const freshOtp = mockMailService.captureOtp();
+
+                // First use
+                await pactum
+                    .spec()
+                    .post('/auth/verifyOTP')
+                    .withHeaders('Authorization', 'Bearer $S{AccessToken}')
+                    .withBody({ submitted: freshOtp, purpose: 'password-reset' })
+                    .expectStatus(200);
+
+                // Reuse — no active OTP exists anymore
+                return pactum
+                    .spec()
+                    .post('/auth/verifyOTP')
+                    .withHeaders('Authorization', 'Bearer $S{AccessToken}')
+                    .withBody({ submitted: freshOtp, purpose: 'password-reset' })
+                    .expectStatus(400);
+            });
+        });
+
+        // ─── Two Factor OTP ───────────────────────────────────────────────────────
+        describe('Two Factor OTP', () => {
+            let otp: string;
+
+            it('should throw 401 if no access token', () => {
+                return pactum
+                    .spec()
+                    .get('/auth/twoFactor')
+                    .expectStatus(401);
+            });
+
+            it('should send two factor OTP', async () => {
+                await pactum
+                    .spec()
+                    .get('/auth/twoFactor')
+                    .withHeaders('Authorization', 'Bearer $S{AccessToken}')
+                    .expectStatus(200)
+                    .expectBodyContains('Two Factor verification code sent!');
+
+                otp = mockMailService.captureOtp();
+                expect(otp).toMatch(/^\d{6}$/);
+            });
+
+            // Wrong value — OTP still active
+            it('should throw 400 for wrong two factor OTP', () => {
+                return pactum
+                    .spec()
+                    .post('/auth/verifyOTP')
+                    .withHeaders('Authorization', 'Bearer $S{AccessToken}')
+                    .withBody({ submitted: '000000', purpose: 'two-factor' })
+                    .expectStatus(400);
+            });
+
+            // Same OTP — still valid
+            it('should verify two factor OTP', () => {
+                return pactum
+                    .spec()
+                    .post('/auth/verifyOTP')
+                    .withHeaders('Authorization', 'Bearer $S{AccessToken}')
+                    .withBody({ submitted: otp, purpose: 'two-factor' })
+                    .expectStatus(200)
+                    .expectBodyContains('Otp Verification successful');
+            });
+
+            it('should throw 400 on OTP reuse', async () => {
+                await pactum
+                    .spec()
+                    .get('/auth/twoFactor')
+                    .withHeaders('Authorization', 'Bearer $S{AccessToken}');
+
+                const freshOtp = mockMailService.captureOtp();
+
+                await pactum
+                    .spec()
+                    .post('/auth/verifyOTP')
+                    .withHeaders('Authorization', 'Bearer $S{AccessToken}')
+                    .withBody({ submitted: freshOtp, purpose: 'two-factor' })
+                    .expectStatus(200);
+
+                return pactum
+                    .spec()
+                    .post('/auth/verifyOTP')
+                    .withHeaders('Authorization', 'Bearer $S{AccessToken}')
+                    .withBody({ submitted: freshOtp, purpose: 'two-factor' })
+                    .expectStatus(400);
+            });
+        });
+
     })
     describe('User', ()=>{})
-    describe('OTP', ()=>{})
 })

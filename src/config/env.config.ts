@@ -5,6 +5,8 @@ export default () => ({
 
   databaseURL: process.env.DATABASE_URL,
 
+  otpCooldown: process.env.OTP_COOLDOWN,
+
   refreshSecret: process.env.REFRESH_SECRET || 'refresh',
   accessSecret: process.env.ACCESS_SECRET || 'access',
 

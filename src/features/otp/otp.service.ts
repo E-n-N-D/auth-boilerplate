@@ -4,6 +4,7 @@ import { OtpPurpose } from '@prisma/client';
 import * as argon2 from 'argon2';
 import { randomInt } from 'crypto';
 import { VerifyOtpDto } from './dto';
+import { ConfigService } from '@nestjs/config';
 
 const OTP_LENGTH   = 6;
 const OTP_TTL_MS   = 5 * 60 * 1000; // 5 minutes
@@ -12,7 +13,10 @@ const COOLDOWN_MS  = 2 * 60 * 1000; // 2 minute re-send cooldown
 
 @Injectable()
 export class OtpService {
-  constructor(private prisma: PrismaService) {}
+  private readonly cooldownMs: number;
+  constructor(private prisma: PrismaService, config: ConfigService) {
+    this.cooldownMs = config.get('otpCooldown') || COOLDOWN_MS;
+  }
 
   async createOtp(userId: string, purpose: OtpPurpose): Promise<string> {
     const activeOtp = await this.findActive(userId, purpose);
@@ -20,7 +24,7 @@ export class OtpService {
     if (activeOtp) {
       const age = Date.now() - activeOtp.createdAt.getTime();
 
-      if (age < COOLDOWN_MS) {
+      if (age < this.cooldownMs) {
         throw new BadRequestException(
           'Please wait before requesting a new OTP.',
         );
