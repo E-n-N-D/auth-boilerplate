@@ -7,6 +7,7 @@ import { PrismaService } from "@/prisma/prisma.service";
 import { LoginDto, SignUpDto } from "@/features/auth/dto";
 import { MailService } from '@/features/mail/mail.service';
 import { MockMailService } from './mock-mail.service';
+import { match } from 'assert';
 
 describe('App e2e', ()=>{
 
@@ -507,5 +508,55 @@ describe('App e2e', ()=>{
         });
 
     })
-    describe('User', ()=>{})
+    describe('User', ()=>{
+        describe("Get User", ()=>{
+            it("should return unauthorized on missing accessToken",()=>{
+                return pactum
+                        .spec()
+                        .get("/user/me")
+                        .expectStatus(401)
+            })
+
+            it("should return user", ()=>{
+                return pactum
+                        .spec()
+                        .get("/user/me")
+                        .withHeaders('Authorization', 'Bearer $S{AccessToken}')
+                        .expectJsonLike({
+                            user:{
+                                id: "typeof $V === 'string'"
+                            }
+                        })
+            })
+
+        })
+
+        describe("Update User", ()=>{
+            it("should return unauthorized on missing accessToken",()=>{
+                return pactum
+                        .spec()
+                        .put("/user/update")
+                        .expectStatus(401)
+            })
+
+            it("should return bad request error on missing body",()=>{
+                return pactum
+                        .spec()
+                        .put("/user/update")
+                        .withHeaders('Authorization', 'Bearer $S{AccessToken}')
+                        .expectStatus(400)
+            })
+
+            it("should update user", ()=>{
+                return pactum
+                        .spec()
+                        .put("/user/update")
+                        .withHeaders('Authorization', 'Bearer $S{AccessToken}')
+                        .withBody({
+                            firstName: "Samir"
+                        })
+                        .expectStatus(200)
+            })
+        })
+    })
 })

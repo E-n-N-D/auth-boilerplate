@@ -10,8 +10,8 @@ import { UpdateUserDto } from './dto';
 export class UsersController {
     constructor(private userService: UsersService){}
 
-    @HttpCode(HttpStatus.OK)
     @Get('me')
+    @HttpCode(HttpStatus.OK)
     async getUser(@GetUser() user: SafeUser){
         return {
             success: true,
@@ -21,6 +21,7 @@ export class UsersController {
     }
 
     @Put('update')
+    @HttpCode(HttpStatus.OK)
     async updateUser(@GetUser() user: SafeUser, dto: UpdateUserDto){
         return this.userService.updateUser(user.id, dto)
     }
