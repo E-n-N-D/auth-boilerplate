@@ -22,7 +22,7 @@ export class UsersController {
 
     @Put('update')
     @HttpCode(HttpStatus.OK)
-    async updateUser(@GetUser() user: SafeUser, dto: UpdateUserDto){
+    async updateUser(@GetUser() user: SafeUser, @Body() dto: UpdateUserDto){
         return this.userService.updateUser(user.id, dto)
     }
 

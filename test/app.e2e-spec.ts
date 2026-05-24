@@ -513,14 +513,14 @@ describe('App e2e', ()=>{
             it("should return unauthorized on missing accessToken",()=>{
                 return pactum
                         .spec()
-                        .get("/user/me")
+                        .get("/users/me")
                         .expectStatus(401)
             })
 
             it("should return user", ()=>{
                 return pactum
                         .spec()
-                        .get("/user/me")
+                        .get("/users/me")
                         .withHeaders('Authorization', 'Bearer $S{AccessToken}')
                         .expectJsonLike({
                             user:{
@@ -535,27 +535,29 @@ describe('App e2e', ()=>{
             it("should return unauthorized on missing accessToken",()=>{
                 return pactum
                         .spec()
-                        .put("/user/update")
+                        .put("/users/update")
                         .expectStatus(401)
             })
 
             it("should return bad request error on missing body",()=>{
                 return pactum
                         .spec()
-                        .put("/user/update")
+                        .put("/users/update")
                         .withHeaders('Authorization', 'Bearer $S{AccessToken}')
                         .expectStatus(400)
+                        .inspect()
             })
 
             it("should update user", ()=>{
                 return pactum
                         .spec()
-                        .put("/user/update")
+                        .put("/users/update")
                         .withHeaders('Authorization', 'Bearer $S{AccessToken}')
                         .withBody({
                             firstName: "Samir"
                         })
                         .expectStatus(200)
+                        .inspect()
             })
         })
     })
