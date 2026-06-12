@@ -7,7 +7,6 @@ import { PrismaService } from "@/prisma/prisma.service";
 import { LoginDto, SignUpDto } from "@/features/auth/dto";
 import { MailService } from '@/features/mail/mail.service';
 import { MockMailService } from './mock-mail.service';
-import { match } from 'assert';
 
 describe('App e2e', ()=>{
 
